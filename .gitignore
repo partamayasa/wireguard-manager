@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+data/
+scratch/
+.admin-lte-v4.10.0/
+*.db
+*.log
+.env

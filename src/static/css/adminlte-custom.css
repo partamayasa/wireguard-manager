@@ -1,0 +1,292 @@
+/* AdminLTE 4 Custom Overrides and Modal Styling */
+:root {
+  --wg-primary: #10b981;
+  --modal-bg: #ffffff;
+  --modal-border: #dee2e6;
+  --modal-text: #212529;
+  --preview-bg: #f8fafc;
+  --preview-border: #e2e8f0;
+  --preview-text: #0f172a;
+}
+
+[data-bs-theme="light"] {
+  --modal-bg: #ffffff;
+  --modal-border: #dee2e6;
+  --modal-text: #212529;
+  --preview-bg: #f8fafc;
+  --preview-border: #e2e8f0;
+  --preview-text: #0f172a;
+}
+
+[data-bs-theme="dark"] {
+  --modal-bg: #1e293b;
+  --modal-border: #334155;
+  --modal-text: #f8fafc;
+  --preview-bg: #090d16;
+  --preview-border: #1e293b;
+  --preview-text: #a5b4fc;
+}
+
+/* AdminLTE 4 Layout — let layout-fixed handle sidebar natively */
+.app-wrapper.d-none {
+  display: none !important;
+}
+
+/* Fixed Sidebar Layout (AdminLTE 4 - fixed-sidebar.html) */
+@media (min-width: 992px) {
+  .layout-fixed .app-sidebar {
+    position: sticky !important;
+    top: 0 !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    z-index: 1035 !important;
+  }
+
+  .layout-fixed .app-sidebar .sidebar-wrapper {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    height: calc(100vh - 3.5rem);
+  }
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 16px;
+}
+
+.modal-card {
+  background: var(--modal-bg, #ffffff);
+  border: 1px solid var(--modal-border, #dee2e6);
+  color: var(--modal-text, #212529);
+  width: 100%;
+  max-width: 540px;
+  border-radius: 0.5rem;
+  padding: 24px;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.conf-preview {
+  background: var(--preview-bg, #f8fafc);
+  border: 1px solid var(--preview-border, #e2e8f0);
+  color: var(--preview-text, #0f172a);
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  max-height: 180px;
+  overflow-y: auto;
+  text-align: left;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.qr-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  min-height: 240px;
+}
+
+.qr-container svg {
+  width: 220px;
+  height: 220px;
+}
+
+.dns-preset-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--preview-bg, #f8fafc);
+  border: 1px solid var(--preview-border, #e2e8f0);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.log-item {
+  padding: 10px 14px;
+  background: var(--preview-bg, #f8fafc);
+  border: 1px solid var(--preview-border, #e2e8f0);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-online {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.badge-offline {
+  background: rgba(108, 117, 125, 0.15);
+  color: #6c757d;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Table alignment & typography */
+.table thead th,
+.table tbody td,
+#peer-table-body td {
+  text-align: center !important;
+  vertical-align: middle !important;
+  font-weight: 400 !important;
+}
+
+.peer-name {
+  font-weight: 400 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  margin: 0 auto !important;
+  gap: 8px;
+}
+
+.peer-ip {
+  font-family: monospace;
+  font-weight: 400 !important;
+  color: #0d6efd;
+}
+
+[data-bs-theme="dark"] .peer-ip {
+  color: #60a5fa;
+}
+
+.action-group {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.action-btn {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  height: 31px !important;
+  padding: 0 10px !important;
+  font-size: 0.8rem !important;
+  line-height: 1 !important;
+}
+
+.action-btn i {
+  display: inline-block !important;
+  margin-right: 5px !important;
+  font-size: 0.85rem !important;
+  line-height: 1 !important;
+}
+
+.btn-xs {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--bs-body-bg, #ffffff);
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-left: 4px solid #10b981;
+  color: var(--bs-body-color, #212529);
+  padding: 12px 20px;
+  border-radius: 8px;
+  display: none;
+  font-size: 0.9rem;
+  z-index: 2000;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+/* AdminLTE Login Page adjustments */
+.login-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.login-box {
+  width: 400px;
+  max-width: 92%;
+  margin: 0 auto;
+}
+
+.login-logo {
+  font-size: 2.1rem;
+  font-weight: 300;
+  line-height: 1.2;
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+.login-logo a {
+  text-decoration: none;
+}
+
+.callout-info {
+  background-color: rgba(13, 110, 253, 0.08);
+  border-left: 3px solid #0d6efd;
+  border-radius: 4px;
+  padding: 9px 12px;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+}

@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>WireGuard Manager</title>
+
+  <!--begin::Theme Init (default to light mode, #6043)-->
+  <script>
+    (() => {
+      'use strict';
+      const root = document.documentElement;
+      if (root.getAttribute('data-lte-color-mode') === 'off') {
+        return;
+      }
+      const STORAGE_KEY = 'lte-theme';
+      let stored = null;
+      try {
+        stored = localStorage.getItem(STORAGE_KEY);
+      } catch {
+        // localStorage may be unavailable
+      }
+      const authored = root.getAttribute('data-bs-theme') || 'light';
+      let resolved = 'light';
+      if (stored === 'dark' || stored === 'light') {
+        resolved = stored;
+      } else if (authored === 'dark' || authored === 'light') {
+        resolved = authored;
+      }
+      root.setAttribute('data-bs-theme', resolved);
+      root.style.colorScheme = resolved;
+    })();
+  </script>
+  <!--end::Theme Init-->
+
+  <!--begin::Fonts-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+    crossorigin="anonymous" />
+  <!--end::Fonts-->
+
+  <!--begin::Third Party Plugin(OverlayScrollbars)-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css"
+    crossorigin="anonymous" />
+  <!--end::Third Party Plugin(OverlayScrollbars)-->
+
+  <!--begin::Third Party Plugin(Bootstrap Icons)-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+    crossorigin="anonymous" />
+  <!--end::Third Party Plugin(Bootstrap Icons)-->
+
+  <!--begin::Required Plugin(AdminLTE)-->
+  <link rel="stylesheet" href="/static/css/adminlte.css" />
+  <!--end::Required Plugin(AdminLTE)-->
+
+  <!--begin::Custom Overrides & Modals-->
+  <link rel="stylesheet" href="/static/css/adminlte-custom.css" />
+  <!--end::Custom Overrides-->
+
+  <style>
+    .table thead th,
+    .table tbody td,
+    #peer-table-body td {
+      text-align: center !important;
+      vertical-align: middle !important;
+    }
+    .peer-name {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+      font-weight: 400 !important;
+      margin: 0 auto !important;
+    }
+    .action-group {
+      display: inline-flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: center !important;
+      margin: 0 auto !important;
+      gap: 8px !important;
+      white-space: nowrap !important;
+    }
+    .action-btn {
+      display: inline-flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: center !important;
+      white-space: nowrap !important;
+      height: 31px !important;
+      padding: 0 10px !important;
+      font-size: 0.8rem !important;
+      line-height: 1 !important;
+    }
+    .action-btn i {
+      display: inline-block !important;
+      margin-right: 5px !important;
+      font-size: 0.85rem !important;
+      line-height: 1 !important;
+    }
+  </style>
+
+  <script src="/static/js/qrcode.js"></script>
+</head>
+
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+
+  <!--begin::Login View (AdminLTE 4 Login Card)-->
+  <div id="login-view" class="login-page bg-body-secondary" style="display: none; min-height: 100vh;">
+    <main class="login-box">
+      <div class="login-logo mb-3">
+        <a href="#" class="d-inline-flex align-items-center gap-2 text-decoration-none">
+          <span style="font-size: 2.2rem; line-height: 1; filter: grayscale(100%);" aria-label="WireGuard Shield">🛡️</span>
+          <span class="fs-2 text-body"><b class="text-primary">WireGuard</b> Manager</span>
+        </a>
+      </div>
+      <div class="card card-outline card-primary shadow-sm">
+        <div class="card-body login-card-body p-4">
+          <p class="login-box-msg text-secondary mb-3 text-center">Sign in to start your management session</p>
+          <div class="callout-info mb-3">
+            Default credentials: <b>admin</b> / <b>admin</b>
+          </div>
+
+          <form onsubmit="handleLogin(event)">
+            <label class="visually-hidden" for="login-username">Username</label>
+            <div class="input-group mb-3">
+              <input id="login-username" type="text" class="form-control" placeholder="Username" value="admin"
+                autocomplete="username" required>
+              <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+            </div>
+
+            <label class="visually-hidden" for="login-password">Password</label>
+            <div class="input-group mb-3">
+              <input id="login-password" type="password" class="form-control" placeholder="Password"
+                autocomplete="current-password" required autofocus>
+              <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+            </div>
+
+            <div class="row align-items-center">
+              <div class="col-7">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="flexCheckDefault" checked>
+                  <label class="form-check-label text-secondary small" for="flexCheckDefault">Remember Me</label>
+                </div>
+              </div>
+              <div class="col-5">
+                <div class="d-grid">
+                  <button type="submit" class="btn btn-primary" id="btn-login">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+  <!--end::Login View-->
+
+  <!--begin::Dashboard App Wrapper (AdminLTE 4 index2.html layout)-->
+  <div id="dashboard-view" class="app-wrapper d-none">
+
+    <!--begin::Header-->
+    <nav class="app-header navbar navbar-expand bg-body shadow-sm">
+      <div class="container-fluid">
+        <!--begin::Start Navbar Links-->
+        <ul class="navbar-nav align-items-center">
+          <li class="nav-item">
+            <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button" aria-label="Toggle sidebar">
+              <i class="bi bi-list fs-4"></i>
+            </a>
+          </li>
+        </ul>
+        <!--end::Start Navbar Links-->
+
+        <!--begin::End Navbar Links-->
+        <ul class="navbar-nav ms-auto align-items-center gap-1">
+          <!-- Quick Action Buttons -->
+          <li class="nav-item d-none d-lg-block">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openServerSettingsModal()">
+              <i class="bi bi-hdd-network me-1"></i> Endpoint &amp; Port
+            </button>
+          </li>
+          <li class="nav-item d-none d-lg-block">
+            <button type="button" class="btn btn-sm btn-outline-info" onclick="openDnsModal()">
+              <i class="bi bi-globe me-1"></i> DNS
+            </button>
+          </li>
+          <li class="nav-item d-none d-lg-block">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openAuditLogsModal()">
+              <i class="bi bi-journal-text me-1"></i> Activity Log
+            </button>
+          </li>
+
+
+          <!--begin::User Menu Dropdown-->
+          <li class="nav-item dropdown user-menu">
+            <a href="#" class="nav-link dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+              <span class="d-inline-flex align-items-center justify-content-center rounded-circle shadow-sm bg-secondary text-white" style="width: 32px; height: 32px; font-size: 1rem;"><i class="bi bi-person-fill"></i></span>
+              <span class="d-none d-md-inline fw-semibold">Admin</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end shadow-sm">
+              <li class="user-header text-bg-primary text-center p-3">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle shadow mb-2 bg-white text-primary" style="width: 72px; height: 72px; font-size: 2rem;"><i class="bi bi-person-fill"></i></span>
+                <p class="mb-0 fw-bold">
+                  Administrator
+                  <small class="d-block text-white-50">WireGuard Security Console</small>
+                </p>
+              </li>
+
+
+              <li class="user-footer d-flex justify-content-center gap-2 p-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                  onclick="openChangePwModal()">Password</button>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="handleLogout()">Sign out</button>
+              </li>
+            </ul>
+          </li>
+          <!--end::User Menu Dropdown-->
+        </ul>
+        <!--end::End Navbar Links-->
+      </div>
+    </nav>
+    <!--end::Header-->
+
+    <!--begin::Sidebar-->
+    <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+      <!--begin::Sidebar Brand-->
+      <div class="sidebar-brand">
+        <a href="#" class="brand-link text-decoration-none d-flex align-items-center gap-2">
+          <span class="brand-image d-inline-flex align-items-center justify-content-center" style="font-size: 1.35rem; line-height: 1; filter: grayscale(100%);" aria-label="Shield Logo">🛡️</span>
+          <span class="brand-text fw-bold">WireGuard</span>
+        </a>
+      </div>
+      <!--end::Sidebar Brand-->
+
+      <!--begin::Sidebar Wrapper-->
+      <div class="sidebar-wrapper">
+        <nav class="mt-2" aria-label="Main navigation">
+          <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false"
+            id="navigation">
+            <li class="nav-item">
+              <a href="#" class="nav-link active">
+                <i class="nav-icon bi bi-speedometer2"></i>
+                <p>Dashboard</p>
+              </a>
+            </li>
+
+            <li class="nav-header">MANAGEMENT</li>
+            <li class="nav-item">
+              <a href="#" class="nav-link" onclick="openServerSettingsModal(); return false;">
+                <i class="nav-icon bi bi-hdd-network"></i>
+                <p>Endpoint &amp; Port</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#" class="nav-link" onclick="openDnsModal(); return false;">
+                <i class="nav-icon bi bi-globe"></i>
+                <p>Manage DNS</p>
+              </a>
+            </li>
+
+            <li class="nav-header">SYSTEM &amp; AUDIT</li>
+            <li class="nav-item">
+              <a href="#" class="nav-link" onclick="openAuditLogsModal(); return false;">
+                <i class="nav-icon bi bi-journal-text"></i>
+                <p>Activity Logs</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#" class="nav-link" onclick="openChangePwModal(); return false;">
+                <i class="nav-icon bi bi-key"></i>
+                <p>Change Password</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#" class="nav-link text-danger" onclick="handleLogout(); return false;">
+                <i class="nav-icon bi bi-box-arrow-right"></i>
+                <p>Sign Out</p>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+      <!--end::Sidebar Wrapper-->
+    </aside>
+    <!--end::Sidebar-->
+
+    <!--begin::App Main-->
+    <main class="app-main">
+      <!--begin::App Content Header-->
+      <div class="app-content-header py-3">
+        <div class="container-fluid">
+          <div class="row align-items-center">
+            <div class="col-sm-6">
+              <h3 class="mb-0 fw-bold">WireGuard Dashboard</h3>
+            </div>
+            <div class="col-sm-6">
+              <ol class="breadcrumb float-sm-end mb-0">
+                <li class="breadcrumb-item"><a href="#" class="text-decoration-none">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--end::App Content Header-->
+
+      <!--begin::App Content-->
+      <div class="app-content">
+        <div class="container-fluid">
+
+          <!--begin::Info Boxes (from AdminLTE index2.html)-->
+          <div class="row mb-3">
+            <!-- Box 1: Server Status -->
+            <div class="col-12 col-sm-6 col-md-3">
+              <div class="info-box shadow-sm mb-3">
+                <span class="info-box-icon text-bg-primary shadow-sm">
+                  <i class="bi bi-shield-check"></i>
+                </span>
+                <div class="info-box-content">
+                  <span class="info-box-text text-secondary">Server Status</span>
+                  <span class="info-box-number" id="stat-status">
+                    <span class="status-badge badge-online">
+                      <span class="pulse-dot"></span> Checking
+                    </span>
+                  </span>
+                  <div class="small text-secondary mt-1 d-flex align-items-center gap-1">
+                    <span id="stat-endpoint">-</span>
+                    <button class="btn btn-link p-0 text-decoration-none small"
+                      onclick="openServerSettingsModal()">Edit</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Box 2: Connected Peers -->
+            <div class="col-12 col-sm-6 col-md-3">
+              <div class="info-box shadow-sm mb-3">
+                <span class="info-box-icon text-bg-info shadow-sm">
+                  <i class="bi bi-people-fill"></i>
+                </span>
+                <div class="info-box-content">
+                  <span class="info-box-text text-secondary">Connected Peers</span>
+                  <span class="info-box-number" id="stat-peers">
+                    0 <small class="text-success fw-normal">/ 0 Online</small>
+                  </span>
+                  <div class="small text-secondary mt-1">
+                    Subnet: <span id="stat-subnet" class="fw-semibold">172.16.0.1/24</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Box 3: Download RX -->
+            <div class="col-12 col-sm-6 col-md-3">
+              <div class="info-box shadow-sm mb-3">
+                <span class="info-box-icon text-bg-success shadow-sm">
+                  <i class="bi bi-download"></i>
+                </span>
+                <div class="info-box-content">
+                  <span class="info-box-text text-secondary">Download (RX)</span>
+                  <span class="info-box-number text-success" id="stat-rx">0 B</span>
+                  <div class="small text-secondary mt-1">
+                    Incoming tunnel traffic
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Box 4: Upload TX -->
+            <div class="col-12 col-sm-6 col-md-3">
+              <div class="info-box shadow-sm mb-3">
+                <span class="info-box-icon text-bg-warning shadow-sm">
+                  <i class="bi bi-upload"></i>
+                </span>
+                <div class="info-box-content">
+                  <span class="info-box-text text-secondary">Upload (TX)</span>
+                  <span class="info-box-number text-warning" id="stat-tx">0 B</span>
+                  <div class="small text-secondary mt-1">
+                    Outgoing tunnel traffic
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!--end::Info Boxes-->
+
+          <!--begin::Users Data Table Card (AdminLTE tables/data.html reference)-->
+          <div class="row">
+            <div class="col-12">
+              <div class="card card-outline card-primary shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                  <h3 class="card-title fw-bold mb-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-people-fill text-primary"></i>
+                    <span>Users &amp; Clients</span>
+                  </h3>
+                  <div class="card-tools">
+                    <div class="input-group input-group-sm" style="width: 240px;">
+                      <span class="input-group-text bg-body border-end-0">
+                        <i class="bi bi-search text-secondary"></i>
+                      </span>
+                      <input id="table-filter" type="search" class="form-control border-start-0"
+                        placeholder="Filter rows..." aria-label="Filter rows" oninput="filterPeers()" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-body">
+                  <div class="d-flex gap-2 mb-3 align-items-center justify-content-between flex-wrap">
+                    <div class="d-flex gap-2 flex-wrap">
+                      <button type="button" class="btn btn-sm btn-primary" onclick="openAddModal()">
+                        <i class="bi bi-plus-lg me-1"></i> Add Client
+                      </button>
+                      <button id="export-csv" type="button" class="btn btn-sm btn-outline-secondary"
+                        onclick="exportPeersCsv()">
+                        <i class="bi bi-filetype-csv me-1"></i> Export CSV
+                      </button>
+                      <button id="export-json" type="button" class="btn btn-sm btn-outline-secondary"
+                        onclick="exportPeersJson()">
+                        <i class="bi bi-filetype-json me-1"></i> Export JSON
+                      </button>
+                      <button id="print-table" type="button" class="btn btn-sm btn-outline-secondary"
+                        onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i> Print
+                      </button>
+                    </div>
+                    <div class="small text-secondary" id="client-table-count">
+                      Showing 0 clients
+                    </div>
+                  </div>
+
+                  <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover align-middle mb-0">
+                      <thead class="table-light text-center">
+                        <tr>
+                          <th class="text-center" style="width: 1%; white-space: nowrap;">Status</th>
+                          <th class="text-center">Name</th>
+                          <th class="text-center">IP Address</th>
+                          <th class="text-center">Last Handshake</th>
+                          <th class="text-center">Transfer (RX / TX)</th>
+                          <th class="text-center" style="width: 290px; min-width: 290px; white-space: nowrap;">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="peer-table-body">
+                        <tr>
+                          <td colspan="6" class="text-center text-secondary py-4">Loading clients</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div
+                  class="card-footer d-flex justify-content-between align-items-center text-secondary small bg-body-tertiary">
+                  <span>WireGuard Client Management</span>
+                  <span id="card-footer-info"><i class="bi bi-arrow-repeat me-1"></i> Live sync</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!--end::Users Data Table Card-->
+
+        </div>
+      </div>
+      <!--end::App Content-->
+    </main>
+    <!--end::App Main-->
+
+    <!--begin::Footer-->
+    <footer class="app-footer text-secondary small py-3 px-4 bg-body border-top">
+      <div class="float-end d-none d-sm-inline">
+        <b>Version</b> 0.0.2026 (AdminLTE v4.10.0)
+      </div>
+      <strong>Copyright &copy; 2026 <a href="#" class="text-decoration-none">WireGuard Manager</a>.</strong> All rights
+      reserved.
+    </footer>
+    <!--end::Footer-->
+
+  </div>
+  <!--end::Dashboard App Wrapper-->
+
+  <!--begin::Modals-->
+  <!-- Add Client Modal -->
+  <div id="add-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h4 class="modal-title d-flex align-items-center gap-2">
+        <i class="bi bi-person-plus-fill text-primary"></i> Add New Client
+      </h4>
+      <form onsubmit="handleAddPeer(event)">
+        <div class="form-group mb-3">
+          <label class="form-label">Client Name (Alphanumeric, max 15 characters)</label>
+          <input type="text" id="add-name" class="form-control" placeholder="e.g. personal_phone, macbook" required
+            pattern="[a-zA-Z0-9_-]+" maxlength="15">
+        </div>
+        <div class="form-group mb-3">
+          <label class="form-label" for="add-dns">DNS Server</label>
+          <select id="add-dns" class="form-select">
+          </select>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-end mt-4">
+          <button type="button" class="btn btn-outline-secondary" onclick="closeModal('add-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save &amp; Generate</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manage Endpoint & Port Modal -->
+  <div id="server-settings-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h4 class="modal-title d-flex align-items-center gap-2">
+        <i class="bi bi-hdd-network text-primary"></i> Manage Endpoint &amp; Port
+      </h4>
+      <p class="text-secondary small mb-3">Configure the public connection address and WireGuard UDP listen port.</p>
+      <form onsubmit="handleSaveServerSettings(event)">
+        <div class="form-group mb-3">
+          <label class="form-label" for="settings-endpoint">Public Endpoint / Hostname</label>
+          <div class="input-group">
+            <input type="text" id="settings-endpoint" class="form-control"
+              placeholder="e.g. 203.0.113.45 or vpn.yourdomain.com" required>
+            <button class="btn btn-outline-primary d-inline-flex align-items-center gap-1" type="button" id="btn-detect-ip" onclick="detectPublicIP()">
+              <i class="bi bi-crosshair"></i> <span>Detect IP</span>
+            </button>
+          </div>
+        </div>
+        <div class="form-group mb-3">
+          <label class="form-label">Listen Port (UDP)</label>
+          <input type="number" id="settings-port" class="form-control" min="1" max="65535" placeholder="51820" required>
+        </div>
+        <div class="form-check mb-3">
+          <input type="checkbox" class="form-check-input" id="settings-update-clients" checked>
+          <label class="form-check-label small text-secondary" for="settings-update-clients">
+            Update all existing client configuration files (.conf) and QR codes with this new endpoint and port
+          </label>
+        </div>
+        <div class="d-flex gap-2 justify-content-end mt-4">
+          <button type="button" class="btn btn-outline-secondary"
+            onclick="closeModal('server-settings-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- QR Code & Config Modal -->
+  <div id="qr-modal" class="modal-overlay">
+    <div class="modal-card text-center">
+      <h4 id="qr-modal-title" class="modal-title">QR Code &amp; Configuration</h4>
+      <p class="text-secondary small mb-3">Scan using the WireGuard mobile app or download the .conf file</p>
+      <div id="qr-box" class="qr-container shadow-sm border rounded">Loading QR</div>
+      <div id="conf-preview" class="conf-preview shadow-sm rounded">Loading configuration</div>
+      <div class="d-flex gap-2 justify-content-center mt-3">
+        <button id="btn-copy-conf" type="button" class="btn btn-outline-secondary" onclick="copyConfigText()">
+          <i class="bi bi-clipboard me-1"></i> Copy Config
+        </button>
+        <a id="btn-download-conf" href="#" download class="btn btn-primary">
+          <i class="bi bi-download me-1"></i> Download .conf
+        </a>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('qr-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client / Peer Settings Modal (AllowedIPs) -->
+  <div id="peer-settings-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h4 class="modal-title d-flex align-items-center gap-2">
+        <i class="bi bi-gear text-primary"></i> <span id="peer-settings-title">Client Settings</span>
+      </h4>
+      <p class="text-secondary small mb-3">Configure client AllowedIPs (tunnel routing) in the WireGuard profile.</p>
+      <form onsubmit="handleSavePeerSettings(event)">
+        <input type="hidden" id="edit-peer-name" />
+        <div class="form-group mb-3">
+          <label class="form-label" for="edit-peer-allowed-ips">Client AllowedIPs (Routing / Subnets)</label>
+          <input type="text" id="edit-peer-allowed-ips" class="form-control font-monospace"
+            placeholder="e.g. 0.0.0.0/0, ::/0 or 10.0.0.0/8, 172.16.0.0/16" required>
+          <div class="form-text small text-secondary mt-1">
+            Specifies the destination traffic routed through the VPN tunnel in this user's configuration file (e.g. <code>0.0.0.0/0, ::/0</code> for full tunnel).
+          </div>
+        </div>
+        <div class="d-flex gap-2 justify-content-end mt-4">
+          <button type="button" class="btn btn-outline-secondary" onclick="closeModal('peer-settings-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manage DNS Modal -->
+  <div id="dns-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h4 class="modal-title d-flex align-items-center gap-2">
+        <i class="bi bi-globe text-primary"></i> DNS Server Management
+      </h4>
+      <p class="text-secondary small mb-3">Configure preset DNS servers saved in SQLite database.</p>
+      <div id="dns-presets-list" style="max-height: 200px; overflow-y: auto;" class="mb-3"></div>
+
+      <div class="border-top pt-3">
+        <h6 class="fw-bold mb-2">+ Add Custom DNS Preset</h6>
+        <form onsubmit="handleCreateDnsPreset(event)">
+          <div class="form-group mb-2">
+            <input type="text" id="new-dns-name" class="form-control"
+              placeholder="Preset Name (e.g. Pi-hole, AdGuard Home)" required>
+          </div>
+          <div class="form-group mb-3">
+            <input type="text" id="new-dns-value" class="form-control"
+              placeholder="DNS IP(s) (e.g. 192.168.1.5, 1.1.1.1)" required>
+          </div>
+          <div class="d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-secondary" onclick="closeModal('dns-modal')">Close</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Add Preset</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity / Audit Log Modal -->
+  <div id="logs-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h4 class="modal-title d-flex align-items-center gap-2">
+        <i class="bi bi-journal-text text-primary"></i> Activity Logs (SQLite)
+      </h4>
+      <p class="text-secondary small mb-3">Audit trail of recent administrator and system actions.</p>
+      <div id="audit-logs-list" style="max-height: 320px; overflow-y: auto;" class="mb-3">
+        Loading logs
+      </div>
+      <div class="d-flex justify-content-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('logs-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div id="pw-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h4 class="modal-title d-flex align-items-center gap-2">
+        <i class="bi bi-key-fill text-primary"></i> Change Admin Password
+      </h4>
+      <form onsubmit="handleChangePw(event)">
+        <div class="form-group mb-3">
+          <label class="form-label">Current Password</label>
+          <input type="password" id="pw-old" class="form-control" required>
+        </div>
+        <div class="form-group mb-3">
+          <label class="form-label">New Password (Min 6 characters)</label>
+          <input type="password" id="pw-new" class="form-control" required minlength="6">
+        </div>
+        <div class="d-flex gap-2 justify-content-end mt-4">
+          <button type="button" class="btn btn-outline-secondary" onclick="closeModal('pw-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Save Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <!--end::Modals-->
+
+  <!--begin::Required Third Party Plugins-->
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
+  <!--end::Required Third Party Plugins-->
+
+  <!--begin::Required Plugin(AdminLTE)-->
+  <script src="/static/js/adminlte.js"></script>
+  <!--end::Required Plugin(AdminLTE)-->
+
+  <!--begin::OverlayScrollbars Configure-->
+  <script>
+    window.initSidebarScrollbars = function () {
+      const sidebarWrapper = document.querySelector('.sidebar-wrapper');
+      const isMobile = window.innerWidth <= 992;
+      if (
+        sidebarWrapper &&
+        window.OverlayScrollbarsGlobal?.OverlayScrollbars !== undefined &&
+        !isMobile &&
+        !sidebarWrapper.dataset.osInitialized
+      ) {
+        window.OverlayScrollbarsGlobal.OverlayScrollbars(sidebarWrapper, {
+          scrollbars: {
+            theme: 'os-theme-light',
+            autoHide: 'leave',
+            clickScroll: true,
+          },
+        });
+        sidebarWrapper.dataset.osInitialized = 'true';
+      }
+    };
+    document.addEventListener('DOMContentLoaded', window.initSidebarScrollbars);
+  </script>
+  <!--end::OverlayScrollbars Configure-->
+
+  <!--begin::App Dashboard Logic-->
+  <script src="/static/js/dashboard.js"></script>
+  <!--end::App Dashboard Logic-->
+</body>
+
+</html>
